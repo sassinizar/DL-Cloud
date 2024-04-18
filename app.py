@@ -86,12 +86,18 @@ def model_predict(img_path, model):
     cv2.imshow("Processed Image", img)
     img = img.reshape(1, 32, 32, 1)
     # PREDICT IMAGE
-    predictions = model.predict(img)
-    classIndex = model.predict_classes(img)
+    preds = model.predict(img)
+   # classIndex = model.predict_classes(img)
+    classIndex = (model.predict(img) > 0.5).astype("int32")
     # probabilityValue =np.amax(predictions)
-    preds = getClassName(classIndex)
+    print(classIndex)
+    print("***********")
+    index = np.where(classIndex == 1)[1][0]
+    print(index)
+    preds = getClassName(index)
     return preds
-
+    #result = predictions.argmax()
+    #print(classIndex(result))
 
 @app.route('/', methods=['GET'])
 def index():
