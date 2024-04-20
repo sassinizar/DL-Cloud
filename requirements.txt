@@ -1,0 +1,7 @@
+flask
+tensorflow
+keras
+keras.models
+keras.preprocessing
+python-opencv
+numpy
