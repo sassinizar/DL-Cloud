@@ -1,36 +1,31 @@
 from __future__ import division, print_function
-import sys
 import os
-import glob
-import re
 import numpy as np
-import tensorflow as tf
-import tensorflow as tf
 import cv2
-
+import base64
+from flask import Flask, request, render_template, jsonify
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 
-from flask import Flask, redirect, url_for, request, render_template
-from werkzeug.utils import secure_filename
-
 app = Flask(__name__)
 
-MODEL_PATH ='model.h5'
-
+MODEL_PATH = 'model.h5'
 model = load_model(MODEL_PATH)
 
 def grayscale(img):
-    img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     return img
+
 def equalize(img):
-    img =cv2.equalizeHist(img)
+    img = cv2.equalizeHist(img)
     return img
+
 def preprocessing(img):
     img = grayscale(img)
     img = equalize(img)
-    img = img/255
+    img = img / 255
     return img
+
 def getClassName(classNo):
     if   classNo == 0: return 'Speed Limit 20 km/h'
     elif classNo == 1: return 'Speed Limit 30 km/h'
@@ -78,46 +73,40 @@ def getClassName(classNo):
 
 
 def model_predict(img_path, model):
-    print(img_path)
     img = image.load_img(img_path, target_size=(224, 224))
     img = np.asarray(img)
     img = cv2.resize(img, (32, 32))
     img = preprocessing(img)
-    cv2.imshow("Processed Image", img)
     img = img.reshape(1, 32, 32, 1)
-    # PREDICT IMAGE
     preds = model.predict(img)
-   # classIndex = model.predict_classes(img)
-    classIndex = (model.predict(img) > 0.5).astype("int32")
-    # probabilityValue =np.amax(predictions)
-    print(classIndex)
-    print("***********")
-    index = np.where(classIndex == 1)[1][0]
-    print(index)
-    preds = getClassName(index)
-    return preds
-    #result = predictions.argmax()
-    #print(classIndex(result))
+    classIndex = np.argmax(preds)
+    className = getClassName(classIndex)
+
+    # Encode image to base64
+    with open(img_path, "rb") as img_file:
+        encoded_string = base64.b64encode(img_file.read()).decode('utf-8')
+
+    return className, encoded_string
 
 @app.route('/', methods=['GET'])
 def index():
-    # Main page
     return render_template('index.html')
 
-
-@app.route('/predict', methods=['GET', 'POST'])
+@app.route('/predict', methods=['POST'])
 def upload():
     if request.method == 'POST':
         f = request.files['file']
         basepath = os.path.dirname(__file__)
-        file_path = os.path.join(
-            basepath, 'uploads', secure_filename(f.filename))
+        file_path = os.path.join(basepath, 'uploads', f.filename)
         f.save(file_path)
-        preds = model_predict(file_path, model)
-        result=preds
-        return result
+        class_name, encoded_img = model_predict(file_path, model)
+        result = {
+            'class_name': class_name,
+            'image_base64': encoded_img
+        }
+        return jsonify(result)
     return None
 
-
 if __name__ == '__main__':
-    app.run(port=5001,debug=True)
+    app.run(port=5000)
+

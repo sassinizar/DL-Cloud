@@ -3,5 +3,5 @@ tensorflow
 keras
 keras.models
 keras.preprocessing
-python-opencv
+opencv-python
 numpy

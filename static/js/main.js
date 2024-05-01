@@ -45,10 +45,11 @@ $(document).ready(function () {
                 // Get and display the result
                 $('.loader').hide();
                 $('#result').fadeIn(600);
-                $('#result').text(' Result:  ' + data);
+                $('#result').text(' Result:  ' + data.class_name);
                 console.log('Success!');
             },
         });
     });
 
 });
+
